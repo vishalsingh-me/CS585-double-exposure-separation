@@ -39,18 +39,25 @@ These directions are planned research paths. Model implementation and comparison
 
 ## Repository Structure
 
-The repository is currently in an initialization stage. The following structure reflects the intended organization, including planned folders that may be added as the project develops.
+The repository now includes a data preparation scaffold for the current milestone.
 
 ```text
 cs585-double-exposure-separation/
 ├── README.md
-├── data/                  # Planned: dataset notes, metadata, preprocessing outputs
-├── docs/                  # Planned: project notes, reports, references
-├── notebooks/             # Planned: exploratory analysis and prototyping
-├── scripts/               # Planned: data preparation and synthetic generation scripts
-├── src/                   # Planned: model, training, and evaluation code
-├── experiments/           # Planned: experiment configs and logs
-└── results/               # Planned: qualitative outputs and evaluation summaries
+├── requirements.txt
+├── data/
+│   ├── raw/               # Downloaded source images, not committed
+│   ├── interim/           # Cleaning reports and intermediate manifests
+│   └── processed/         # Split files, debug subsets, future synthetic outputs
+├── docs/
+│   └── data_pipeline.md   # Data workflow documentation
+└── scripts/
+    ├── data_utils.py
+    ├── verify_dataset_structure.py
+    ├── clean_image_dataset.py
+    ├── create_data_splits.py
+    ├── create_debug_subset.py
+    └── generate_synthetic_pairs.py
 ```
 
 ## Dataset Direction
@@ -86,16 +93,28 @@ The initial project workflow is organized around the following milestones:
 
 ## Setup
 
-Implementation is still being organized, so the setup process is not finalized yet.
-
-Planned setup steps:
+The repository currently includes the data preparation pipeline for this milestone.
 
 1. Clone the repository.
-2. Create a project environment once dependencies are finalized.
-3. Add dataset access instructions after the data pipeline is defined.
-4. Add training and evaluation instructions after the first baseline is implemented.
+2. Create and activate a Python environment.
+3. Install the required package with `pip install -r requirements.txt`.
+4. Download and extract Places365 under `data/raw/places365_standard/`.
+5. Run the data pipeline scripts described in [docs/data_pipeline.md](docs/data_pipeline.md).
 
-Detailed commands will be added once the codebase structure and dependencies are stable.
+Model training and evaluation setup will be added later.
+
+## Data Pipeline
+
+The repository now includes command-line scripts for:
+
+- verifying a downloaded image dataset
+- cleaning and filtering invalid image files
+- creating train, validation, and test split manifests
+- creating small debug subsets
+- validating the future interface for synthetic mixture generation
+
+Detailed usage instructions are in [docs/data_pipeline.md](docs/data_pipeline.md).
+For a full teammate handoff and replication guide, see [docs/project_replication_guide.md](docs/project_replication_guide.md).
 
 ## Team Responsibilities
 
@@ -112,14 +131,16 @@ The following section is a placeholder and can be updated once roles are finaliz
 - Repository initialized.
 - Project scope and problem framing documented.
 - Dataset direction identified, with Places365 under consideration as a source of clean scene images.
-- Data preparation, synthetic generation code, and model implementations are still in the planning stage.
+- Data preparation scripts for verification, cleaning, split generation, and debug subsetting have been added.
+- Synthetic mixture generation remains a planned next step and is represented only by a validation stub.
+- Model training code has not been implemented yet.
 - No experimental results are reported yet.
 
 ## Next Steps
 
-- Confirm dataset access, usage constraints, and final image selection criteria.
-- Define the synthetic mixture generation procedure and file format for training pairs.
-- Add initial repository folders for data, scripts, and source code.
-- Implement the first preprocessing utilities.
-- Build a dual-head encoder-decoder baseline as the initial reference model.
-- Expand the documentation as milestone work begins.
+- Download and verify the clean source image dataset under `data/raw/places365_standard/`.
+- Run the cleaning pipeline and review rejected files.
+- Generate reproducible train, validation, and test manifests from the cleaned image set.
+- Define the synthetic mixture generation procedure and pair sampling policy.
+- Add the first implementation of synthetic double-exposure generation.
+- Expand documentation as the pipeline is exercised on the real dataset.
