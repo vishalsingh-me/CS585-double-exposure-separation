@@ -9,12 +9,22 @@ class DoubleConv(nn.Module):
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
+            nn.BatchNorm2d(out_channels)
         )
+        self.relu = nn.ReLU(inplace=True)
+        # Residual connection shortcut
+        self.shortcut = nn.Sequential()
+        if in_channels != out_channels:
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False),
+                nn.BatchNorm2d(out_channels)
+            )
 
     def forward(self, x):
-        return self.conv(x)
+        residual = self.shortcut(x)
+        out = self.conv(x)
+        out += residual
+        return self.relu(out)
 
 class DualHeadUNet(nn.Module):
     def __init__(self, in_channels=3, base_channels=64):

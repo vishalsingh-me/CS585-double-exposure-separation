@@ -103,6 +103,54 @@ The repository currently includes the data preparation pipeline for this milesto
 
 Model training and evaluation setup will be added later.
 
+## Separator Training
+
+The original Dual-Head U-Net baseline is still available, and a stronger `TwoDecoderUNet` has been added. The original baseline used one shared decoder and split the final 6-channel output into two RGB predictions. This can make the two outputs highly correlated. The TwoDecoderUNet keeps a shared encoder but uses independent decoders, allowing each branch to specialize in one source layer. Reconstruction consistency forces the predicted sources to explain the observed mixture, while decorrelation discourages both outputs from collapsing into similar ghosted images.
+
+Run a quick smoke test:
+
+```bash
+python3 scripts/smoke_test_separator.py \
+  --manifest data/processed/synthetic/train/pair_manifest.csv \
+  --model two_decoder_unet \
+  --output-dir experiments/smoke_two_decoder \
+  --batch-size 2 \
+  --base-channels 16 \
+  --image-size 128
+```
+
+Train:
+
+```bash
+python3 src/train_separator.py \
+  --model two_decoder_unet \
+  --train-manifest data/processed/synthetic/train/pair_manifest.csv \
+  --val-manifest data/processed/synthetic/val/pair_manifest.csv \
+  --output-dir experiments/two_decoder_unet_recon_corr \
+  --epochs 30 \
+  --batch-size 4 \
+  --lr 1e-4 \
+  --base-channels 32 \
+  --image-size 256 \
+  --lambda-recon 0.1 \
+  --lambda-corr 0.01
+```
+
+Evaluate:
+
+```bash
+python3 src/evaluate_separator.py \
+  --model two_decoder_unet \
+  --checkpoint experiments/two_decoder_unet_recon_corr/checkpoints/best.pt \
+  --manifest data/processed/synthetic/val/pair_manifest.csv \
+  --output-dir experiments/two_decoder_unet_recon_corr/eval \
+  --batch-size 4 \
+  --base-channels 32 \
+  --image-size 256
+```
+
+See [docs/model_improvements.md](docs/model_improvements.md), [docs/visualization_guide.md](docs/visualization_guide.md), and [docs/colab_training_guide.md](docs/colab_training_guide.md).
+
 ## Data Pipeline
 
 The repository now includes command-line scripts for:

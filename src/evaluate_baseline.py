@@ -20,6 +20,7 @@ from src.models.dual_head_unet import DualHeadUNet
 from src.losses import permutation_invariant_l1_loss
 from src.data.saved_synthetic_dataset import SavedSyntheticDataset, custom_collate_saved
 import torchvision.utils as vutils
+from src.visualization_utils import save_separation_grid
 
 
 try:
@@ -58,7 +59,7 @@ def main():
     model.eval()
 
     results = []
-    images_to_concat = []
+    visual_batch = None
     
     with torch.no_grad():
         for batch in tqdm(loader, desc="Evaluating"):
@@ -92,8 +93,14 @@ def main():
                     ssim_2 = ssim(p2_np, s2_np, data_range=1.0, channel_axis=-1)
                     res["ssim"] = float((ssim_1 + ssim_2) / 2)
                 
-                if i < 4 and len(results) < 8:
-                    images_to_concat.extend([s1[i], s2[i], mix[i], p1_ordered[i], p2_ordered[i]])
+                if visual_batch is None:
+                    visual_batch = (
+                        s1.detach().cpu(),
+                        s2.detach().cpu(),
+                        mix.detach().cpu(),
+                        p1_ordered.detach().cpu(),
+                        p2_ordered.detach().cpu(),
+                    )
                 
                 # Safely merge metadata (guard against missing keys)
                 meta = batch["metadata"][i] if i < len(batch["metadata"]) else {}
@@ -102,9 +109,8 @@ def main():
                         res[k] = v
                 results.append(res)
     
-    if images_to_concat:
-        grid = vutils.make_grid([torch.clamp(t, 0, 1).cpu() for t in images_to_concat], nrow=5, normalize=False)
-        vutils.save_image(grid, args.output_dir / "eval_samples.png")
+    if visual_batch is not None:
+        save_separation_grid(args.output_dir / "eval_samples.png", *visual_batch)
 
     avg_l1 = sum([r["l1_loss"] for r in results]) / len(results)
     avg_psnr = sum([r["psnr"] for r in results]) / len(results)

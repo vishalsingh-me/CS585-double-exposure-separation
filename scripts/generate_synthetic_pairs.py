@@ -25,6 +25,21 @@ def resize_center_crop(image, size):
     img = image.crop((left, top, left + min_dim, top + min_dim))
     return img.resize((size, size), Image.Resampling.LANCZOS)
 
+def get_row_path(row):
+    return row.get("relative_path") or row.get("path") or row.get("image_path") or ""
+
+def get_row_label(row):
+    label = (row.get("label") or "").strip()
+    if label:
+        return label
+
+    path_value = get_row_path(row)
+    if path_value:
+        parent = Path(path_value).parent.name
+        if parent and parent != ".":
+            return parent
+    return ""
+
 def sample_pair(manifest, rng, same_label_probability, current_split):
     # filter manifest
     valid_rows = [row for row in manifest if row.get("split", current_split) == current_split]
@@ -33,7 +48,9 @@ def sample_pair(manifest, rng, same_label_probability, current_split):
     
     label_dict = {}
     for row in valid_rows:
-        lbl = row.get("label", "unknown")
+        lbl = get_row_label(row)
+        if not lbl:
+            continue
         if lbl not in label_dict:
             label_dict[lbl] = []
         label_dict[lbl].append(row)
@@ -41,10 +58,11 @@ def sample_pair(manifest, rng, same_label_probability, current_split):
     same_label = False
     img1 = rng.choice(valid_rows)
     img2 = None
+    img1_label = get_row_label(img1)
     
-    if rng.random() < same_label_probability and len(label_dict.get(img1.get("label", "unknown"), [])) > 1:
+    if img1_label and rng.random() < same_label_probability and len(label_dict.get(img1_label, [])) > 1:
         same_label = True
-        candidates = [row for row in label_dict[img1.get("label", "unknown")] if row != img1]
+        candidates = [row for row in label_dict[img1_label] if row != img1]
         if candidates:
             img2 = rng.choice(candidates)
             
@@ -77,15 +95,16 @@ def generate_mask(height, width, mask_type, rng):
 
 def blend_images(img1, img2, config):
     t1 = TF.to_tensor(img1)
-    t2 = TF.to_tensor(img2)
+    img2_work = img2
     
     # transform image 2
     if config["transform_dx"] != 0 or config["transform_dy"] != 0:
-        t2 = TF.affine(t2, angle=0.0, translate=[config["transform_dx"], config["transform_dy"]], scale=1.0, shear=[0.0, 0.0])
+        img2_work = apply_translation(img2_work, config["transform_dx"], config["transform_dy"])
     
     if config["blur_radius"] > 0:
-        img2_blur = img2.filter(ImageFilter.GaussianBlur(config["blur_radius"]))
-        t2 = TF.to_tensor(img2_blur)
+        img2_work = apply_blur(img2_work, config["blur_radius"])
+
+    t2 = TF.to_tensor(img2_work)
         
     mask = None
     mask_stats = {}
@@ -128,6 +147,7 @@ def main():
     parser.add_argument("--same-label-probability", type=float, default=0.1)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--save-masks", action="store_true")
+    parser.add_argument("--avoid-duplicate-pairs", action="store_true")
     args = parser.parse_args()
     
     rng = random.Random(args.seed)
@@ -144,14 +164,24 @@ def main():
         (out_dir / "masks").mkdir(parents=True, exist_ok=True)
         
     manifest_rows = []
+    used_pairs = set()
     
-    for i in range(args.num_pairs):
+    i = 0
+    attempts = 0
+    max_attempts = max(args.num_pairs * 50, 100)
+    while i < args.num_pairs and attempts < max_attempts:
+        attempts += 1
         img1_meta, img2_meta, same_label = sample_pair(manifest, rng, args.same_label_probability, args.split)
         if img1_meta is None:
             continue
         
-        rel1 = img1_meta.get("relative_path", img1_meta.get("path", ""))
-        rel2 = img2_meta.get("relative_path", img2_meta.get("path", ""))
+        rel1 = get_row_path(img1_meta)
+        rel2 = get_row_path(img2_meta)
+        if args.avoid_duplicate_pairs:
+            pair_key = tuple(sorted([rel1, rel2]))
+            if pair_key in used_pairs:
+                continue
+            used_pairs.add(pair_key)
         
         path1 = args.image_root / rel1
         path2 = args.image_root / rel2
@@ -194,8 +224,8 @@ def main():
             "synthesis_mode": args.mode,
             "source_1_path": str(path1),
             "source_2_path": str(path2),
-            "source_1_label": img1_meta.get("label", ""),
-            "source_2_label": img2_meta.get("label", ""),
+            "source_1_label": get_row_label(img1_meta),
+            "source_2_label": get_row_label(img2_meta),
             "same_label": same_label,
             "mixture_path": f"mixtures/{prefix}_mix.png",
             "target_1_path": f"source_1/{prefix}_source_1.png",
@@ -213,6 +243,10 @@ def main():
         }
         row.update(mask_stats)
         manifest_rows.append(row)
+        i += 1
+
+    if i < args.num_pairs:
+        logging.warning("Generated %s/%s pairs after %s attempts. Try disabling --avoid-duplicate-pairs or using more source images.", i, args.num_pairs, attempts)
         
     keys = manifest_rows[0].keys() if manifest_rows else []
     with open(out_dir / "pair_manifest.csv", "w", newline="") as f:

@@ -16,7 +16,7 @@ import csv
 from tqdm import tqdm
 
 from src.models.dual_head_unet import DualHeadUNet
-from src.losses import permutation_invariant_l1_loss, get_reconstruction_loss
+from src.losses import permutation_invariant_l1_loss, get_reconstruction_loss, get_perceptual_loss, VGGLoss
 from src.data.saved_synthetic_dataset import SavedSyntheticDataset, custom_collate_saved
 import torchvision.utils as vutils
 import matplotlib.pyplot as plt
@@ -63,6 +63,7 @@ def main():
     parser.add_argument("--base-channels", type=int, default=64, help="U-Net base channels (default: 64)")
     parser.add_argument("--image-size", type=int, default=256, help="Image resize dimension (default: 256)")
     parser.add_argument("--lambda-recon", type=float, default=0.0, help="Weight for reconstruction consistency loss (default: 0.0)")
+    parser.add_argument("--lambda-perc", type=float, default=0.0, help="Weight for perceptual loss (default: 0.0)")
     parser.add_argument("--seed", type=int, default=585, help="Random seed (default: 585)")
     parser.add_argument("--max-train-samples", type=int, default=None, help="Limit training samples (for debugging)")
     parser.add_argument("--max-val-samples", type=int, default=None, help="Limit validation samples (for debugging)")
@@ -95,9 +96,13 @@ def main():
     model = DualHeadUNet(base_channels=args.base_channels).to(device)
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
+    vgg_loss = None
+    if args.lambda_perc > 0.0:
+        vgg_loss = VGGLoss(device=device)
+
     log_csv = open(args.output_dir / "train_log.csv", "w", newline="")
     csv_writer = csv.writer(log_csv)
-    csv_writer.writerow(["epoch", "train_loss", "train_recon_loss", "val_loss", "lr"])
+    csv_writer.writerow(["epoch", "train_loss", "train_recon_loss", "train_perc_loss", "val_loss", "lr"])
 
     best_val_loss = float('inf')
     
@@ -108,6 +113,7 @@ def main():
         model.train()
         train_loss = 0.0
         train_recon_loss = 0.0
+        train_perc_loss = 0.0
         pbar = tqdm(train_loader, desc=f"Epoch {epoch}/{args.epochs} Train")
         
         for batch in pbar:
@@ -122,21 +128,29 @@ def main():
             
             total_loss = pit_loss
             recon_loss = torch.tensor(0.0)
+            perc_loss = torch.tensor(0.0)
+            
             if args.lambda_recon > 0.0:
                 alphas = [float(m.get('alpha', -1.0)) for m in batch['metadata']]
                 alphas_t = torch.tensor(alphas, dtype=torch.float32, device=device)
                 recon_loss = get_reconstruction_loss(p1, p2, mix, alphas_t, is_a)
-                total_loss = pit_loss + args.lambda_recon * recon_loss
+                total_loss += args.lambda_recon * recon_loss
+                
+            if args.lambda_perc > 0.0 and vgg_loss is not None:
+                perc_loss = get_perceptual_loss(p1, p2, s1, s2, is_a, vgg_loss)
+                total_loss += args.lambda_perc * perc_loss
                 
             total_loss.backward()
             optimizer.step()
             
             train_loss += pit_loss.item() * mix.size(0)
             train_recon_loss += recon_loss.item() * mix.size(0)
-            pbar.set_postfix({"loss": f"{pit_loss.item():.4f}", "recon": f"{recon_loss.item():.4f}"})
+            train_perc_loss += perc_loss.item() * mix.size(0)
+            pbar.set_postfix({"loss": f"{pit_loss.item():.4f}", "recon": f"{recon_loss.item():.4f}", "perc": f"{perc_loss.item():.4f}"})
             
         train_loss /= len(train_ds)
         train_recon_loss /= len(train_ds)
+        train_perc_loss /= len(train_ds)
         
         model.eval()
         val_loss = 0.0
@@ -165,8 +179,8 @@ def main():
         train_loss_history.append(train_loss)
         val_loss_history.append(val_loss)
         
-        logging.info(f"Epoch {epoch} | Train L1: {train_loss:.4f} | Train Recon: {train_recon_loss:.4f} | Val L1: {val_loss:.4f}")
-        csv_writer.writerow([epoch, train_loss, train_recon_loss, val_loss, args.lr])
+        logging.info(f"Epoch {epoch} | Train L1: {train_loss:.4f} | Train Recon: {train_recon_loss:.4f} | Train Perc: {train_perc_loss:.4f} | Val L1: {val_loss:.4f}")
+        csv_writer.writerow([epoch, train_loss, train_recon_loss, train_perc_loss, val_loss, args.lr])
         log_csv.flush()
         plot_loss_curve(train_loss_history, val_loss_history, args.output_dir / "loss_curve.png")
         
@@ -195,6 +209,7 @@ def main():
         "image_size": args.image_size,
         "seed": args.seed,
         "lambda_recon": args.lambda_recon,
+        "lambda_perc": args.lambda_perc,
         "best_val_loss": best_val_loss,
         "final_train_loss": train_loss_history[-1] if train_loss_history else None,
         "final_val_loss": val_loss_history[-1] if val_loss_history else None,
