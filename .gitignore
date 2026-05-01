@@ -25,3 +25,10 @@ data/interim/*
 !data/interim/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
+
+# Experiments and results
+experiments/
+results/
+
+# Generated images
+**/*.png
