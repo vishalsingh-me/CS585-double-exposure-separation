@@ -20,7 +20,7 @@ from src.visualization_utils import match_predictions, save_separation_grid
 def main():
     parser = argparse.ArgumentParser(description="Smoke test separator models.")
     parser.add_argument("--manifest", type=Path, required=True)
-    parser.add_argument("--model", choices=["dual_head_unet", "two_decoder_unet", "both"], default="both")
+    parser.add_argument("--model", choices=["dual_head_unet", "two_decoder_unet", "two_stage_refinement_unet", "both"], default="both")
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--batch-size", type=int, default=2)
     parser.add_argument("--base-channels", type=int, default=16)

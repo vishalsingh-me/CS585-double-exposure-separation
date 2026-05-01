@@ -149,7 +149,7 @@ def run_epoch(model, loader, device, optimizer, lambda_recon, lambda_corr, train
 
 def main():
     parser = argparse.ArgumentParser(description="Train a double-exposure separator.")
-    parser.add_argument("--model", choices=["dual_head_unet", "two_decoder_unet"], default="two_decoder_unet")
+    parser.add_argument("--model", choices=["dual_head_unet", "two_decoder_unet", "two_stage_refinement_unet"], default="two_decoder_unet")
     parser.add_argument("--train-manifest", type=Path, required=True)
     parser.add_argument("--val-manifest", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)

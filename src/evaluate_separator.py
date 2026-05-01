@@ -95,7 +95,7 @@ def write_grouped(results, key, output_path, transform=lambda x: x):
 
 def main():
     parser = argparse.ArgumentParser(description="Evaluate a double-exposure separator.")
-    parser.add_argument("--model", choices=["dual_head_unet", "two_decoder_unet"], default="two_decoder_unet")
+    parser.add_argument("--model", choices=["dual_head_unet", "two_decoder_unet", "two_stage_refinement_unet"], default="two_decoder_unet")
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
