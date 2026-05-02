@@ -1,0 +1,59 @@
+Host: scc-202
+Job ID: 4703757
+Start time: Fri May  1 11:49:24 EDT 2026
+/projectnb/cs585/students/vsingh03/CS585-double-exposure-separation/.venv/lib/python3.10/site-packages/torch/cuda/__init__.py:371: UserWarning: Found GPU0 Tesla V100-SXM2-16GB which is of compute capability (CC) 7.0.
+The following list shows the CCs this version of PyTorch was built for and the hardware CCs it supports:
+- 7.5 which supports hardware CC >=7.5,<8.0
+- 8.0 which supports hardware CC >=8.0,<9.0 except {8.7}
+- 8.6 which supports hardware CC >=8.6,<9.0 except {8.7}
+- 9.0 which supports hardware CC >=9.0,<10.0
+- 10.0 which supports hardware CC >=10.0,<11.0 except {10.1}
+- 12.0 which supports hardware CC >=12.0,<13.0
+Please follow the instructions at https://pytorch.org/get-started/locally/ to install a PyTorch release that supports one of these CUDA versions: 12.6, 12.8
+  _warn_unsupported_code(d, device_cc, code_ccs)
+Torch: 2.11.0+cu130
+CUDA available: True
+GPU: Tesla V100-SXM2-16GB
+Running smoke test...
+/projectnb/cs585/students/vsingh03/CS585-double-exposure-separation/.venv/lib/python3.10/site-packages/torch/cuda/__init__.py:371: UserWarning: Found GPU0 Tesla V100-SXM2-16GB which is of compute capability (CC) 7.0.
+The following list shows the CCs this version of PyTorch was built for and the hardware CCs it supports:
+- 7.5 which supports hardware CC >=7.5,<8.0
+- 8.0 which supports hardware CC >=8.0,<9.0 except {8.7}
+- 8.6 which supports hardware CC >=8.6,<9.0 except {8.7}
+- 9.0 which supports hardware CC >=9.0,<10.0
+- 10.0 which supports hardware CC >=10.0,<11.0 except {10.1}
+- 12.0 which supports hardware CC >=12.0,<13.0
+Please follow the instructions at https://pytorch.org/get-started/locally/ to install a PyTorch release that supports one of these CUDA versions: 12.6, 12.8
+  _warn_unsupported_code(d, device_cc, code_ccs)
+Traceback (most recent call last):
+  File "/projectnb/cs585/students/vsingh03/CS585-double-exposure-separation/scripts/smoke_test_separator.py", line 78, in <module>
+    main()
+  File "/projectnb/cs585/students/vsingh03/CS585-double-exposure-separation/scripts/smoke_test_separator.py", line 48, in main
+    p1, p2 = model(mix)
+  File "/projectnb/cs585/students/vsingh03/CS585-double-exposure-separation/.venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/projectnb/cs585/students/vsingh03/CS585-double-exposure-separation/.venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/projectnb/cs585/students/vsingh03/CS585-double-exposure-separation/src/models/two_decoder_unet.py", line 77, in forward
+    x1 = self.block1(x)
+  File "/projectnb/cs585/students/vsingh03/CS585-double-exposure-separation/.venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/projectnb/cs585/students/vsingh03/CS585-double-exposure-separation/.venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/projectnb/cs585/students/vsingh03/CS585-double-exposure-separation/src/models/two_decoder_unet.py", line 18, in forward
+    return self.net(x)
+  File "/projectnb/cs585/students/vsingh03/CS585-double-exposure-separation/.venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/projectnb/cs585/students/vsingh03/CS585-double-exposure-separation/.venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/projectnb/cs585/students/vsingh03/CS585-double-exposure-separation/.venv/lib/python3.10/site-packages/torch/nn/modules/container.py", line 253, in forward
+    input = module(input)
+  File "/projectnb/cs585/students/vsingh03/CS585-double-exposure-separation/.venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/projectnb/cs585/students/vsingh03/CS585-double-exposure-separation/.venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/projectnb/cs585/students/vsingh03/CS585-double-exposure-separation/.venv/lib/python3.10/site-packages/torch/nn/modules/conv.py", line 553, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+  File "/projectnb/cs585/students/vsingh03/CS585-double-exposure-separation/.venv/lib/python3.10/site-packages/torch/nn/modules/conv.py", line 548, in _conv_forward
+    return F.conv2d(
+RuntimeError: GET was unable to find an engine to execute this computation
