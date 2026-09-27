@@ -6,7 +6,7 @@ Repository: `cs585-double-exposure-separation`
 
 This repository contains a CS585 course project on single-image double-exposure separation. The goal is to recover two latent source images from one observed image that contains a blended double exposure.
 
-The current project direction is to create synthetic double-exposure training data from clean natural images and use deep learning models to predict the two hidden image layers. This repository is intended to support collaborative development, documentation, experiments, and milestone tracking for the course project.
+The current project direction is to create synthetic double-exposure training data from clean natural images and use deep learning models to predict the two hidden image layers. This repository is intended to support development, documentation, experiments, and milestone tracking for the course project.
 
 ## Problem Statement
 
@@ -19,7 +19,7 @@ This project studies how to model that ambiguity in a practical learning framewo
 - Build a clear and reproducible pipeline for synthetic double-exposure data generation.
 - Prepare a clean image source dataset suitable for mixture synthesis.
 - Establish baseline and advanced models for recovering two latent component images.
-- Document assumptions, design choices, and milestone progress in a way that is easy for teammates and instructors to review.
+- Document assumptions, design choices, and milestone progress in a way that is easy for instructors to review.
 - Create a repository structure that can support future experiments, evaluation, and reporting.
 
 ## Planned Approach
@@ -162,17 +162,11 @@ The repository now includes command-line scripts for:
 - validating the future interface for synthetic mixture generation
 
 Detailed usage instructions are in [docs/data_pipeline.md](docs/data_pipeline.md).
-For a full teammate handoff and replication guide, see [docs/project_replication_guide.md](docs/project_replication_guide.md).
+For a full replication guide, see [docs/project_replication_guide.md](docs/project_replication_guide.md).
 
-## Team Responsibilities
+## Author
 
-The following section is a placeholder and can be updated once roles are finalized.
-
-| Team Member | Role | Current Responsibility |
-| --- | --- | --- |
-| Vishal Singh | Data pipeline | Data sourcing, cleaning, preprocessing |
-| Angelina Sun | Modeling | Baseline implementation and training |
-| Jenny Yang| Evaluation | Metrics, qualitative analysis, reporting |
+Vishal Singh
 
 ## Current Status
 

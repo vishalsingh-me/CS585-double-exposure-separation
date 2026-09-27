@@ -1,0 +1,66 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\@writefile{toc}{\contentsline {section}{\numberline {I}Introduction}{1}{section.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {II}Related Work}{1}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-A}}Single-Image Reflection Removal and Layer Separation}{1}{subsection.2.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Forward synthetic generation: two source images are blended into one double-exposure mixture.}}{2}{figure.caption.2}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:forward}{{1}{2}{Forward synthetic generation: two source images are blended into one double-exposure mixture}{figure.caption.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-B}}Synthetic Data for Supervised Inverse Problems}{2}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-C}}U-Net and Image-to-Image Prediction}{2}{subsection.2.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Synthetic datasets used for model evaluation. The larger dataset was generated from the extracted Places365 source pool to test whether data scale improves generalization.}}{2}{table.caption.3}\protected@file@percent }
+\newlabel{tab:datasets}{{I}{2}{Synthetic datasets used for model evaluation. The larger dataset was generated from the extracted Places365 source pool to test whether data scale improves generalization}{table.caption.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {III}Data and Experimental Setup}{2}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}Source Image Pool}{2}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}Synthetic Double-Exposure Generation}{2}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}Metadata, Saved Structure, and Metrics}{2}{subsection.3.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Supervised inverse learning: the model receives only the mixture and is trained against the two source targets.}}{3}{figure.caption.4}\protected@file@percent }
+\newlabel{fig:supervised}{{2}{3}{Supervised inverse learning: the model receives only the mixture and is trained against the two source targets}{figure.caption.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Method}{3}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Supervised Inverse Learning}{3}{subsection.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Permutation-Invariant Loss}{3}{subsection.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Dual-Head U-Net Baseline}{3}{subsection.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-D}}TwoDecoderUNet Extension}{3}{subsection.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-E}}Two-Stage Residual Refinement U-Net}{3}{subsection.4.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-F}}Auxiliary Losses}{3}{subsection.4.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-G}}Visualization Protocol}{3}{subsection.4.7}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Dual-Head U-Net evaluation grid. The model predicts two images, but ghosting remains.}}{4}{figure.caption.5}\protected@file@percent }
+\newlabel{fig:baseline_eval}{{3}{4}{Dual-Head U-Net evaluation grid. The model predicts two images, but ghosting remains}{figure.caption.5}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Quantitative comparison on \texttt  {linear\_clean} validation data. \textbf  {Note:} earlier small-data experiments used 20 validation samples; the large-data Two-Stage Refinement experiment used 200 validation samples. Results are therefore not a perfectly controlled architecture-only comparison and should be interpreted accordingly. The large-data Two-Stage Refinement model achieves the best final PSNR and SSIM and the lowest reported MSE.}}{4}{table.caption.6}\protected@file@percent }
+\newlabel{tab:results}{{II}{4}{Quantitative comparison on \texttt {linear\_clean} validation data. \textbf {Note:} earlier small-data experiments used 20 validation samples; the large-data Two-Stage Refinement experiment used 200 validation samples. Results are therefore not a perfectly controlled architecture-only comparison and should be interpreted accordingly. The large-data Two-Stage Refinement model achieves the best final PSNR and SSIM and the lowest reported MSE}{table.caption.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {V}Results}{4}{section.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}Pipeline and Smoke-Test Validation}{4}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-B}}Dual-Head U-Net Baseline}{4}{subsection.5.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Qualitative evaluation of the Two-Stage Residual Refinement U-Net trained on 2000 synthetic pairs. The model produces more stable predictions than the small-data experiments, but ghosting and source leakage remain visible in challenging examples.}}{5}{figure.caption.7}\protected@file@percent }
+\newlabel{fig:two_stage_eval}{{4}{5}{Qualitative evaluation of the Two-Stage Residual Refinement U-Net trained on 2000 synthetic pairs. The model produces more stable predictions than the small-data experiments, but ghosting and source leakage remain visible in challenging examples}{figure.caption.7}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Training curve for the large-data Two-Stage Residual Refinement U-Net. Training loss decreases steadily while validation loss improves early and then fluctuates, indicating that the larger dataset improves generalization but does not eliminate overfitting.}}{5}{figure.caption.8}\protected@file@percent }
+\newlabel{fig:pit_loss}{{5}{5}{Training curve for the large-data Two-Stage Residual Refinement U-Net. Training loss decreases steadily while validation loss improves early and then fluctuates, indicating that the larger dataset improves generalization but does not eliminate overfitting}{figure.caption.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-C}}TwoDecoderUNet Experiments}{5}{subsection.5.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Validation performance grouped by alpha range for the large-data Two-Stage Refinement model, using metadata logged during synthetic generation. Lower alpha values correspond to mixtures where one source dominates, which are easier to separate.}}{6}{table.caption.9}\protected@file@percent }
+\newlabel{tab:alpha_bins}{{III}{6}{Validation performance grouped by alpha range for the large-data Two-Stage Refinement model, using metadata logged during synthetic generation. Lower alpha values correspond to mixtures where one source dominates, which are easier to separate}{table.caption.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-D}}Large-Data Refinement Experiment}{6}{subsection.5.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-E}}Qualitative Analysis}{6}{subsection.5.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {VI}Discussion}{6}{section.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-A}}Why the Task Is Ill-Posed}{6}{subsection.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-B}}Model Capacity and Data Scale}{6}{subsection.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-C}}Interpretability Through Metadata}{6}{subsection.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-D}}What We Honestly Do Not Claim}{6}{subsection.6.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-E}}Future Direction: Stronger Priors}{6}{subsection.6.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {VII}Work Division}{6}{section.7}\protected@file@percent }
+\bibcite{guo2014}{1}
+\bibcite{yang2018}{2}
+\bibcite{li2020}{3}
+\bibcite{wan2023}{4}
+\bibcite{unet2015}{5}
+\bibcite{places365}{6}
+\bibcite{isola2017}{7}
+\bibcite{wang2004ssim}{8}
+\bibcite{johnson2016}{9}
+\bibcite{zamir2021mprnet}{10}
+\bibcite{liang2021swinir}{11}
+\bibcite{kingma2015adam}{12}
+\@writefile{toc}{\contentsline {section}{\numberline {VIII}Conclusion}{7}{section.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{References}{7}{section*.10}\protected@file@percent }
+\gdef \@abspage@last{7}
