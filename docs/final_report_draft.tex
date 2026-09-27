@@ -1,0 +1,324 @@
+\documentclass[10pt,twocolumn]{article}
+\usepackage[margin=0.72in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{caption}
+
+% NEW PACKAGES
+% \usepackage{dblfloatfix}
+% \usepackage{placeins}
+
+% \usepackage{stfloats}
+\usepackage{microtype}
+\usepackage{tabularx}
+% \usepackage{makecell}
+\usepackage{array}
+% \usepackage{subcaption}
+\usepackage{ifthen}
+% \usepackage{titlesec}
+
+\setlength{\columnsep}{0.24in}
+\setlength{\parindent}{1em}
+\setlength{\parskip}{0pt}
+\captionsetup{font=small}
+
+% \titlespacing*{\section}{0pt}{0.8em}{0.35em}
+% \titlespacing*{\subsection}{0pt}{0.55em}{0.25em}
+
+\newcommand{\safeincludegraphics}[2][]{%
+  \IfFileExists{#2}{%
+    \includegraphics[#1]{#2}%
+  }{%
+    \fbox{%
+      \parbox{0.75\linewidth}{%
+        \centering
+        Missing figure: \detokenize{#2}
+      }%
+    }%
+  }%
+}
+\title{\vspace{-0.7in}\textbf{Separation of Double Exposure}\\
+\large CS585 Final Report (Milestone 4)}
+
+\author{
+Vishal Singh\\
+Department of Computer Science, Boston University\\
+\texttt{U36704671}
+}
+
+\date{}
+
+\begin{document}
+
+\twocolumn[
+\begin{@twocolumnfalse}
+\maketitle
+\vspace{-1em}
+\begin{abstract}
+Double exposure combines two visual scenes into one image. This project studies the inverse problem: given a single double-exposure RGB image, predict the two original source images that generated it. The task is underdetermined because one observed mixture must explain two full latent images. Real double-exposure photographs rarely provide ground-truth source layers, so this project builds a supervised synthetic framework using Places365 as a clean natural-image source pool. The pipeline samples two images, converts them to RGB, resizes and crops them, creates a controlled double-exposure mixture, and saves the mixture, both sources, and metadata such as alpha, synthesis mode, blur, gamma, translation, noise, and same-label status. The project implements a Dual-Head U-Net baseline and a TwoDecoderUNet extension, both trained with permutation-invariant loss. On the verified 20-sample \texttt{linear\_clean} validation set, the 100-epoch Dual-Head U-Net baseline achieves L1 0.2513, PSNR 15.73 dB, and SSIM 0.5344. TwoDecoderUNet with reconstruction and correlation losses achieves L1 0.2789, MSE 0.0330, PSNR 15.18 dB, and SSIM 0.5003. TwoDecoderUNet PIT-only achieves L1 0.2765, MSE 0.0327, PSNR 15.22 dB, and SSIM 0.5109. The models produce two predicted layers, but the predictions retain visible source leakage and ghosting. The current baselines validate the framework but do not fully solve the separation problem.
+% Team author list should be confirmed before final submission.
+\end{abstract}
+\vspace{1em}
+\end{@twocolumnfalse}
+]
+
+\section{Introduction}
+
+Double exposure is a visual composition in which two scenes are blended into one image. In image and video computing, this can be treated as an image formation problem: two latent images are combined by a forward operator to create a single observation. The inverse problem asks whether the original layers can be recovered from the observed mixture.
+
+The task is useful because layer recovery could support image editing, restoration, manipulation of composite imagery, and analysis of layered scenes. It is also challenging because the target is not one corrected image, but two complete source images. In the simplest synthetic setting used in the final experiments, the forward model is
+\[
+I = \alpha I_1 + (1-\alpha) I_2,
+\]
+where $I_1$ and $I_2$ are source images, $I$ is the observed mixture, and $\alpha$ is sampled from a configurable range, usually $[0.3,0.7]$. At each pixel and color channel,
+\[
+I(x,y,c)=\alpha I_1(x,y,c)+(1-\alpha)I_2(x,y,c).
+\]
+This is one equation with two unknown source values. Even if alpha is known, many source pairs can explain the same observation. The model therefore needs learned natural-image priors.
+
+Real double-exposure images rarely include the two original source layers. This project therefore generates synthetic supervised data from Places365 images. The pipeline is:
+\[
+\text{clean sources} \rightarrow \text{synthetic blend} \rightarrow \text{supervised inverse model} \rightarrow \text{predicted sources}.
+\]
+The learned model is
+\[
+G_\phi(I)=(\hat I_1,\hat I_2).
+\]
+
+\textbf{Contributions.} This project builds a synthetic double-exposure generation pipeline, logs metadata for controlled evaluation, formulates the task as supervised inverse learning with permutation ambiguity, implements and evaluates a Dual-Head U-Net baseline, implements and evaluates a TwoDecoderUNet extension, and analyzes ghosting, source leakage, validation fluctuation, and overfitting on limited data.
+
+\section{Related Work}
+
+\subsection{Single-Image Reflection Removal and Layer Separation}
+Double-exposure separation is related to image layer separation and single-image reflection removal. Reflection removal also observes a mixture-like image and attempts to separate latent layers. Work such as Guo et al. (2014), Yang et al. (2018), Li et al. (2020), and Wan et al. (2023) motivates the difficulty of decomposing one observation into multiple latent images. This project differs because the hidden layers are two double-exposure-style source images rather than necessarily transmission and glass reflection layers. The mathematical structure is nevertheless similar.
+
+\subsection{Synthetic Data for Supervised Inverse Problems}
+Many inverse problems lack paired real data. Synthetic data provides a practical way to obtain ground truth. Here, the generator saves $I_1$, $I_2$, and $I$, so supervised losses and quantitative evaluation are possible. Synthetic data also makes the forward process interpretable because alpha, blur, gamma, mask, translation, noise, and labels can be recorded for each pair. The limitation is that synthetic mixtures may not fully match real double-exposure photographs.
+
+\subsection{U-Net and Image-to-Image Prediction}
+U-Net (Ronneberger et al., 2015) is a standard encoder-decoder architecture for dense prediction. It combines downsampling for context with upsampling and skip connections for spatial detail. The Dual-Head U-Net baseline adapts this idea by predicting six output channels: three for one source and three for the other. This is a natural first baseline, but it must allocate visual content across two output images rather than produce one restored image.
+
+\subsection{Stronger Image Restoration Backbones}
+The current results motivate stronger restoration backbones. Small U-Net-style models trained from scratch may not learn strong natural-image priors from 100 training pairs. Future work should consider pretrained CNN encoders, multi-stage refinement networks, and transformer-based restoration models such as SwinIR, Restormer, Uformer, NAFNet, or MPRNet-style designs. These are future directions only; no pretrained or transformer model is claimed as implemented in this report.
+
+\section{Data and Experimental Setup}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/fig1_forward.png}
+\caption{Forward synthetic generation: two source images are blended into one double-exposure mixture.}
+\label{fig:forward}
+\end{figure}
+
+\subsection{Source Image Pool}
+The project uses Places365 as a pool of clean natural images. Places365 is not a native double-exposure dataset. Each image is treated as a candidate latent layer. This choice is practical because the generator can sample two clean images, blend them, and retain the originals as supervision targets.
+
+\subsection{Synthetic Double-Exposure Generation}
+For each synthetic pair, the generator samples two images, loads them as RGB, center-crops and resizes them, optionally translates and blurs the second source, blends the two sources, optionally applies gamma correction or noise, and saves the mixture and source targets. The general forward process is
+\[
+I=f_\theta(I_1,I_2)+\epsilon,
+\]
+where $\theta$ represents synthesis parameters and $\epsilon$ represents noise. For mask blending,
+\[
+I(x,y)=M(x,y)I_1(x,y)+(1-M(x,y))I_2(x,y).
+\]
+The current final experiments use the simplest \texttt{linear\_clean} mode.
+
+\subsection{Metadata, Saved Structure, and Metrics}
+Each row of \texttt{pair\_manifest.csv} records fields such as pair id, split, synthesis mode, source paths, labels, same-label flag, mixture path, target paths, image size, alpha, gamma, noise standard deviation, blur radius, translation, mask type, and seed. This metadata supports grouped evaluation by alpha bin, synthesis mode, and same-label flag.
+
+The saved dataset stores \texttt{mixtures/}, \texttt{source\_1/}, \texttt{source\_2/}, and \texttt{pair\_manifest.csv}. The loader reads images from disk, converts them to tensors, optionally resizes them, and preserves metadata. Evaluation reports permutation-matched L1, MSE when available, PSNR, SSIM, qualitative grids, and error maps.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\begin{tabular}{@{}lrl@{}}
+\toprule
+Split & Pairs & Notes\\
+\midrule
+Train & 100 & $\alpha \in [0.3, 0.7]$\\
+Val & 20 & $\alpha \in [0.3, 0.67]$\\
+\bottomrule
+\end{tabular}
+\caption{Verified final experiment dataset (\texttt{linear\_clean}, $256\times256$).}
+\label{tab:dataset}
+\end{table}
+
+\section{Method}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/fig2_supervised.png}
+\caption{Supervised inverse learning: the model receives only the mixture and is trained against the two source targets.}
+\label{fig:supervised}
+\end{figure}
+
+\subsection{Supervised Inverse Learning}
+The model receives only the blended image as input and predicts two source layers:
+\[
+G_\phi(I)=(\hat I_1,\hat I_2).
+\]
+The original sources are used as training targets, not as inference inputs.
+
+\subsection{Permutation-Invariant Loss}
+Output order is ambiguous. The project therefore uses permutation-invariant L1 loss:
+\[
+L_A=L_1(\hat I_1,I_1)+L_1(\hat I_2,I_2),
+\]
+\[
+L_B=L_1(\hat I_1,I_2)+L_1(\hat I_2,I_1),
+\]
+\[
+L_{PIT}=\min(L_A,L_B).
+\]
+The selected assignment is also used for visualization.
+
+\subsection{Dual-Head U-Net Baseline}
+The Dual-Head U-Net maps a three-channel mixture to a six-channel output,
+\[
+Y=G_\phi(I), \quad Y\in \mathbb{R}^{6\times H\times W},
+\]
+then splits channels:
+\[
+\hat I_1=Y[0:3,:,:], \quad \hat I_2=Y[3:6,:,:].
+\]
+Most computation is shared, and the model separates into two outputs only at the final layer.
+
+\subsection{TwoDecoderUNet Extension}
+TwoDecoderUNet uses a shared encoder and two independent decoders:
+\[
+\text{mixture}\rightarrow\text{shared encoder}\rightarrow\text{bottleneck}\rightarrow
+\begin{cases}
+\text{decoder 1}\rightarrow\hat I_1\\
+\text{decoder 2}\rightarrow\hat I_2
+\end{cases}
+\]
+The hypothesis is that separate decoders may allow branch specialization. The current results show that this architectural change alone is not sufficient at the current data scale.
+
+\subsection{Auxiliary Losses}
+Reconstruction consistency is
+\[
+\hat I_{mix}=\alpha \hat I_1+(1-\alpha)\hat I_2,\quad
+L_{recon}=L_1(\hat I_{mix},I).
+\]
+Output decorrelation flattens, mean-centers, normalizes, and compares the two predictions with absolute cosine similarity. The auxiliary-loss experiment uses
+\[
+L_{total}=L_{PIT}+\lambda_{recon}L_{recon}+\lambda_{corr}L_{corr},
+\]
+with $\lambda_{recon}=0.1$ and $\lambda_{corr}=0.01$. Reconstruction is physically meaningful, but it can still permit mixture-like outputs if not combined with strong disentanglement priors.
+
+\subsection{Visualization Protocol}
+Evaluation grids display Original Source 1, Original Source 2, Blended Mixture, Predicted Source 1, Predicted Source 2, Error 1, and Error 2. Predictions are permutation-matched, and error maps are scaled by 3.0 and clamped to $[0,1]$.
+
+\section{Results}
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabularx}{0.98\textwidth}{l l r r r r r r X}
+\toprule
+Method & Losses & Train & Val & L1 & MSE & PSNR & SSIM & Qualitative result\\
+\midrule
+Dual-Head U-Net & PIT-L1 & 100 & 20 & 0.2513 & N/A & 15.73 & 0.5344 & ghosting\\
+TwoDecoderUNet & PIT+recon+corr & 100 & 20 & 0.2789 & 0.0330 & 15.18 & 0.5003 & mixture-like\\
+TwoDecoderUNet & PIT-only & 100 & 20 & 0.2765 & 0.0327 & 15.22 & 0.5109 & mixture-like\\
+\bottomrule
+\end{tabularx}
+\caption{Verified results on 20 \texttt{linear\_clean} validation samples. Baseline MSE was not available in the baseline evaluation JSON.}
+\label{tab:results}
+\end{table*}
+
+\subsection{Pipeline and Smoke-Test Validation}
+The dataset diagnostic verifies image loading, tensor shape, and value ranges. The smoke test initializes a model, runs a forward pass, computes PIT, reconstruction, and correlation losses, performs one optimizer step, and saves a visualization. SCC GPU training completed for both TwoDecoderUNet variants, and scripts saved logs, checkpoints, metrics, grouped CSVs, and visual grids.
+
+\subsection{Dual-Head U-Net Baseline}
+The strongest numerical baseline is \texttt{experiments/baseline\_unet\_100ep}. Training loss decreased from 0.4278 at epoch 1 to 0.1464 at epoch 100. Validation loss reached its best value of 0.2513 at epoch 33, then worsened to 0.3126 at epoch 100. The model produces two outputs, but qualitative grids show source leakage.
+
+\begin{figure*}[t]
+\centering
+\safeincludegraphics[width=0.88\textwidth]{figures/fig3_baseline_eval.png}
+\caption{Dual-Head U-Net evaluation grid. The model predicts two images, but ghosting remains.}
+\label{fig:baseline_eval}
+\end{figure*}
+
+
+\subsection{TwoDecoderUNet Experiments}
+With reconstruction and decorrelation, training total loss decreased from 0.4454 to 0.2199 over 30 epochs. Validation total loss reached its best value at epoch 21 and worsened by epoch 30. Evaluation gives L1 0.2789, MSE 0.0330, PSNR 15.18 dB, and SSIM 0.5003.
+
+The PIT-only TwoDecoderUNet decreased training loss from 0.4258 to 0.2128. Validation again improved early, reached its best value at epoch 21, and worsened by epoch 30. Evaluation gives L1 0.2765, MSE 0.0327, PSNR 15.22 dB, and SSIM 0.5109. PIT-only slightly outperformed the auxiliary-loss variant, but neither TwoDecoderUNet run improved over the best Dual-Head baseline.
+
+\begin{figure*}[t]
+\centering
+\safeincludegraphics[width=0.88\textwidth]{figures/fig4_twodecoder_eval.png}
+\caption{TwoDecoderUNet PIT-only evaluation grid. The outputs remain mixture-like rather than cleanly separated.}
+\label{fig:twodecoder_eval}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\safeincludegraphics[width=0.70\textwidth]{figures/fig5_loss_curve.png}
+\caption{TwoDecoderUNet PIT-only loss curve. Training decreases while validation worsens after the best checkpoint.}
+\label{fig:pit_loss}
+\end{figure*}
+
+
+\subsection{Qualitative Failure Analysis and Dataset Scale}
+The key qualitative failure is ghosting. Predicted Source 1 and Predicted Source 2 are often visually similar, and both contain content from both originals. The models create two valid image outputs, but not two clean recovered source layers. This is consistent with the underdetermined nature of the task and the limited data scale.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\begin{tabular}{@{}llll@{}}
+\toprule
+Experiment & Train & Val best & Final \\
+\midrule
+Dual-Head & $\downarrow$ & 0.2513 & 0.3126 \\
+TwoDec+aux & $\downarrow$ & 0.2846 & 0.3218 \\
+TwoDec PIT & $\downarrow$ & 0.2765 & 0.3331 \\
+\bottomrule
+\end{tabular}
+\caption{Training behavior showing overfitting.}
+\label{tab:training_behavior}
+\end{table}
+
+
+\clearpage
+\section{Discussion}
+
+\subsection{Why the Task Is Ill-Posed}
+For each pixel and channel, there is one observed value and two unknown source values. Spatial context helps, but many decompositions are still plausible. The model must learn a natural-image prior strong enough to decide which structures belong in which layer.
+
+\subsection{Why the Baselines Produce Ghosting}
+The current baselines are trained from scratch on 100 pairs. Pixel L1 loss can reward average-looking predictions in ambiguous regions. The shared decoder baseline may also encourage correlated outputs, while TwoDecoderUNet lacks a strong semantic prior. Reconstruction consistency can be satisfied by entangled outputs if their blend matches the input. Decorrelation discourages identical outputs, but it is not a full separation prior.
+
+\subsection{What the Experiments Actually Show}
+The current baselines validate the framework but do not fully solve the separation problem. Synthetic generation, training, evaluation, grouped metrics, and visualization work end to end. The models output two images with correct shapes and valid value ranges. However, the outputs retain source leakage and ghosting.
+
+\subsection{Interpretability Through Metadata}
+The metadata design is a strength of the project. Current grouped results are limited by 20 validation samples, but the same structure will become more useful with hundreds of validation examples. It can support analysis by alpha bin, synthesis mode, and same-label status.
+
+\subsection{What We Honestly Do Not Claim}
+We do not claim clean recovery of both source images. We do not claim real double-exposure generalization. We do not claim TwoDecoderUNet improves over the Dual-Head baseline on the current small validation set. We do not claim the current data scale is sufficient. We do claim that the synthetic generation, training, evaluation, and visualization pipeline is functional, and that simple U-Net-style baselines show clear ghosting and source leakage.
+
+\subsection{Future Direction: Stronger Priors}
+Future work should scale synthetic data to 1,000--5,000 training pairs and 200--500 validation pairs, compare against a copy-mixture baseline, use pretrained CNN encoders or image restoration transformer backbones, add perceptual or SSIM losses, and evaluate harder regimes beyond \texttt{linear\_clean} blending.
+
+\section{Work Division}
+Vishal focused on the synthetic data-generation pipeline, data cleaning workflow, pair sampling, metadata logging, visualization design, SCC experiment execution, training/evaluation workflow, ablation analysis, and failure analysis. Angelina contributed to earlier pipeline/baseline development, milestone preparation, and project framing. This work division reflects the implementation and reporting responsibilities for the submitted version.
+
+\section{Conclusion}
+This project built a controlled synthetic framework for double-exposure separation. The pipeline turns an unsupervised real-world problem into a supervised benchmark by saving both sources and mixtures. Dual-Head U-Net and TwoDecoderUNet train successfully and produce two RGB outputs, but they do not cleanly separate the images. Ghosting shows the difficulty of the inverse problem. The framework is functional, and the negative results motivate larger datasets and stronger pretrained CNN or transformer restoration models.
+
+\begin{thebibliography}{9}
+\bibitem{guo2014} X. Guo, X. Cao, and Y. Ma. Robust separation of reflection from multiple images. CVPR, 2014.
+\bibitem{yang2018} J. Yang, D. Gong, L. Liu, and Q. Shi. Seeing deeply and bidirectionally: A deep learning approach for single image reflection removal. ECCV, 2018.
+\bibitem{li2020} C. Li, J. Yang, and X. Guo. Single image reflection removal through cascaded refinement. CVPR, 2020.
+\bibitem{wan2023} R. Wan et al. Benchmarking single-image reflection removal algorithms. IEEE TPAMI, 2023.
+\bibitem{unet2015} O. Ronneberger, P. Fischer, and T. Brox. U-Net: Convolutional Networks for Biomedical Image Segmentation. MICCAI, 2015.
+\end{thebibliography}
+
+\end{document}
